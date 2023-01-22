@@ -4,11 +4,11 @@
 #include "device_launch_parameters.h"
 #include "stb_image.h"
 #include "encode.h"
+#include "blurhashCUDA.cuh"
 
 #include <stdio.h>
 #include <iostream>
 #include <chrono>
-
 
 #define megaToNormal 1000000
 
@@ -59,10 +59,10 @@ int main(int argc, char** argv)
     std::cout << std::endl << "GPU version of the algorythm:" << std::endl;
     auto start2 = std::chrono::high_resolution_clock::now();
 
-    const char* resultHashGPU = blurHashForPixels(atoi(argv[1]), atoi(argv[2]), width, height, data, width * 3);
+    const char* resultHashGPU = blurHashForPixelsCUDA(atoi(argv[1]), atoi(argv[2]), width, height, data, width * 3);
 
     auto stop2 = std::chrono::high_resolution_clock::now();
-    auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start1);
+    auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop2 - start2);
     std::cout << "GPU version execution time: " << duration2.count() / (double)megaToNormal << " s" << std::endl;
     std::cout << "Result hash is: " << resultHashGPU << std::endl;
 
