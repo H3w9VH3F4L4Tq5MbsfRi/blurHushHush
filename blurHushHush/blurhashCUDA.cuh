@@ -20,7 +20,7 @@ __global__ void KernelFill(float* dev_r, float* dev_g, float* dev_b, unsigned ch
 	int xComponent = (blockIdx.x - yComponent * xComponents * height) / height;
 	int threadY = blockIdx.x - yComponent * xComponents * height - xComponent * height;
 	int threadX = threadIdx.x;
-	int colorOffset = yComponent * xComponents * width * height + xComponent * width * height + threadY * width + threadX;
+	int colorOffset = blockIdx.x * width + threadX;
 
 	float basis = cosf(M_PI * xComponent * threadX / width) * cosf(M_PI * yComponent * threadY / height);
 
@@ -30,6 +30,27 @@ __global__ void KernelFill(float* dev_r, float* dev_g, float* dev_b, unsigned ch
 
 	return;
 }
+
+__global__ void KernelAddRows(float* dev_r, float* dev_g, float* dev_b, int width)
+{
+	int threadX = threadIdx.x;
+	int colorOffset = blockIdx.x * width + threadX;
+
+	for (int offset = 1; offset <= width; offset *= 2) 
+	{
+		__syncthreads();
+
+		if (threadX % (offset * 2) != 0 || threadX + offset >= width) continue;
+
+		dev_r[colorOffset] += dev_r[colorOffset + offset];
+		dev_g[colorOffset] += dev_g[colorOffset + offset];
+		dev_b[colorOffset] += dev_b[colorOffset + offset];
+	}
+
+	return;
+}
+
+
 
 const char* blurHashForPixelsCUDA(int xComponents, int yComponents, int width, int height, unsigned char* rgb, size_t bytesPerRow)
 {
@@ -90,7 +111,7 @@ const char* blurHashForPixelsCUDA(int xComponents, int yComponents, int width, i
 		goto Error;
 	}
 
-	KernelFill <<< yComponents * xComponents * height, width >> > (dev_r, dev_g, dev_b, dev_rgb, width, height, xComponents, yComponents, bytesPerRow);
+	KernelFill <<< yComponents * xComponents * height, width >>> (dev_r, dev_g, dev_b, dev_rgb, width, height, xComponents, yComponents, bytesPerRow);
 
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
@@ -106,7 +127,7 @@ const char* blurHashForPixelsCUDA(int xComponents, int yComponents, int width, i
 		goto Error;
 	}
 
-	//launch second cuda function
+	KernelAddRows <<< yComponents * xComponents * height, width >>> (dev_r, dev_g, dev_b, width);
 
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
@@ -122,7 +143,7 @@ const char* blurHashForPixelsCUDA(int xComponents, int yComponents, int width, i
 		goto Error;
 	}
 
-	//launch third cuda function
+	// third cuda function
 
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
