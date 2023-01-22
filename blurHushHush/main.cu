@@ -40,6 +40,14 @@ int main(int argc, char** argv)
     }
     std::cout << "Success!" << std::endl;
 
+    //checking for correct dimentions
+    if (width < 32 || width > 1024 || height < 32 || height >> 1024)
+    {
+        std::cout << "Unsupported image size" << std::endl;
+        std::cout << "Terminating program..." << std::endl;
+        return 1;
+    }
+
     auto stop0 = std::chrono::high_resolution_clock::now();
     auto duration0 = std::chrono::duration_cast<std::chrono::microseconds>(stop0 - start0);
     std::cout << "Image loading took " << duration0.count() / (double)megaToNormal << " s." << std::endl;
