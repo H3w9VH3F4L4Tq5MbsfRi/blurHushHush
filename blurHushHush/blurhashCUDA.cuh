@@ -50,37 +50,7 @@ __global__ void KernelAddRows(float* dev_r, float* dev_g, float* dev_b, int widt
 	return;
 }
 
-__global__ void KernelAddColumnsAndRestOfAlg(float* dev_r, float* dev_g, float* dev_b, float* factors, int width, int height, int xComponents, int yComponents)
-{
-	int threadY = threadIdx.x;
-	int colorOffset = blockIdx.x * width * height + threadY * width;
 
-	for (int offset = 1; offset < height; offset *= 2)
-	{
-		__syncthreads();
-
-		if (threadY % (offset * 2) != 0 || threadY + offset >= height) continue;
-
-		dev_r[colorOffset] += dev_r[colorOffset + offset * width];
-		dev_g[colorOffset] += dev_g[colorOffset + offset * width];
-		dev_b[colorOffset] += dev_b[colorOffset + offset * width];
-	}
-
-	__syncthreads();
-
-	int sumIndx = blockIdx.x;
-	int offset = width * height * sumIndx;
-	float normalisation = ((sumIndx == 0) ? 1 : 2);
-	float scale = normalisation / (width * height);
-
-
-	if (threadY == 0)
-	{
-		factors[sumIndx * 3 + 0] = dev_r[offset] * scale;
-		factors[sumIndx * 3 + 1] = dev_g[offset] * scale;
-		factors[sumIndx * 3 + 2] = dev_b[offset] * scale;
-	}
-}
 
 const char* blurHashForPixelsCUDA(int xComponents, int yComponents, int width, int height, unsigned char* rgb, size_t bytesPerRow)
 {
@@ -173,7 +143,7 @@ const char* blurHashForPixelsCUDA(int xComponents, int yComponents, int width, i
 		goto Error;
 	}
 
-	KernelAddColumnsAndRestOfAlg <<< yComponents * xComponents, height >>> (dev_r, dev_g, dev_b, dev_factors, width, height, xComponents, yComponents);
+	// third cuda function
 
 	cudaStatus = cudaGetLastError();
 	if (cudaStatus != cudaSuccess)
@@ -197,6 +167,42 @@ const char* blurHashForPixelsCUDA(int xComponents, int yComponents, int width, i
 	{
 		fprintf(stderr, "cudaMemcpy failed!");
 		goto Error;
+	}
+
+
+
+	for (int yComponent = 0; yComponent < yComponents; yComponent++)
+	{
+		for (int xComponent = 0; xComponent < xComponents; xComponent++)
+		{
+			float r = 0, g = 0, b = 0;
+			
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					float basis = cosf(M_PI * xComponent * x / width) * cosf(M_PI * yComponent * y / height);
+					r += basis * sRGBToLinear(rgb[3 * x + 0 + y * bytesPerRow]);
+					g += basis * sRGBToLinear(rgb[3 * x + 1 + y * bytesPerRow]);
+					b += basis * sRGBToLinear(rgb[3 * x + 2 + y * bytesPerRow]);
+				}
+			}
+
+			///////////////////////
+
+			float normalisation = (xComponent == 0 && yComponent == 0) ? 1 : 2;
+			float scale = normalisation / (width * height);
+
+			static float result[3];
+			result[0] = r * scale;
+			result[1] = g * scale;
+			result[2] = b * scale;
+
+			float* factor = result;
+			factors[(yComponent * xComponents + xComponent) * 3] = factor[0];
+			factors[(yComponent * xComponents + xComponent) * 3 + 1] = factor[1];
+			factors[(yComponent * xComponents + xComponent) * 3 + 2] = factor[2];
+		}
 	}
 
 	return restOfTheAlgorithm(factors, xComponents, yComponents);
