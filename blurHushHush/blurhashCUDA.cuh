@@ -73,7 +73,6 @@ __global__ void KernelAddColumnsAndRestOfAlg(float* dev_r, float* dev_g, float* 
 	float normalisation = ((sumIndx == 0) ? 1 : 2);
 	float scale = normalisation / (width * height);
 
-
 	if (threadY == 0)
 	{
 		factors[sumIndx * 3 + 0] = dev_r[offset] * scale;

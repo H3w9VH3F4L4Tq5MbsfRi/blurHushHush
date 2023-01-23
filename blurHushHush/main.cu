@@ -57,6 +57,7 @@ int main(int argc, char** argv)
     auto start1 = std::chrono::high_resolution_clock::now();
 
     const char* resultHashCPU = blurHashForPixels(atoi(argv[1]), atoi(argv[2]), width, height, data, width * 3);
+    std::string s1 = (std::string)resultHashCPU;
 
     auto stop1 = std::chrono::high_resolution_clock::now();
     auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(stop1 - start1);
@@ -67,16 +68,17 @@ int main(int argc, char** argv)
     std::cout << std::endl << "GPU version of the algorythm:" << std::endl;
     auto start2 = std::chrono::high_resolution_clock::now();
 
-    const char* chuj = blurHashForPixelsCUDA(atoi(argv[1]), atoi(argv[2]), width, height, data, width * 3);
+    const char* resultHashGPU = blurHashForPixelsCUDA(atoi(argv[1]), atoi(argv[2]), width, height, data, width * 3);
+    std::string s2 = (std::string)resultHashGPU;
 
     auto stop2 = std::chrono::high_resolution_clock::now();
     auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(stop2 - start2);
     std::cout << "GPU version execution time: " << duration2.count() / (double)megaToNormal << " s" << std::endl;
-    std::cout << "Result hash is: " << chuj << std::endl;
+    std::cout << "Result hash is: " << resultHashGPU << std::endl;
 
     //result check
     std::cout << std::endl << "Result check: " << std::endl;
-    if (std::strcmp(resultHashCPU, chuj) == 0)
+    if (s1 == s2)
     {
         std::cout << "Result hashes are the same :)" << std::endl;
         std::cout << "Success!" << std::endl;
