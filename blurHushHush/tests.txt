@@ -1,0 +1,7 @@
+﻿.\blurHushHush.exe 4 4 ../../blurHushHush/testIMG/beach1.png
+
+.\blurHushHush.exe 9 2 ../../blurHushHush/testIMG/beach2.png
+
+.\blurHushHush.exe 2 7 ../../blurHushHush/testIMG/beach3.png
+
+.\blurHushHush.exe 9 9 ../../blurHushHush/testIMG/beach4.png
