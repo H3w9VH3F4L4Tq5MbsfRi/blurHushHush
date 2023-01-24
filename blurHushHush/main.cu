@@ -47,6 +47,10 @@ int main(int argc, char** argv)
         std::cout << "Terminating program..." << std::endl;
         return 1;
     }
+    else
+    {
+        std::cout << "Loaded image is " << width << " x " << height << " (aspect ratio: " << (double)width / height << ")." << std::endl;
+    }
 
     auto stop0 = std::chrono::high_resolution_clock::now();
     auto duration0 = std::chrono::duration_cast<std::chrono::microseconds>(stop0 - start0);
